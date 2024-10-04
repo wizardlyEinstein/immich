@@ -1,8 +1,35 @@
 ---
-# Source: immich/charts/redis/templates/serviceaccount.yaml
-apiVersion: v1
-kind: ServiceAccount
-automountServiceAccountToken: true
+# Source: immich/charts/postgresql/templates/primary/networkpolicy.yaml
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: immich-postgresql
+  namespace: "default"
+  labels:
+    app.kubernetes.io/instance: immich
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/version: 17.0.0
+    helm.sh/chart: postgresql-16.0.0
+    app.kubernetes.io/component: primary
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: immich
+      app.kubernetes.io/name: postgresql
+      app.kubernetes.io/component: primary
+  policyTypes:
+    - Ingress
+    - Egress
+  egress:
+    - {}
+  ingress:
+    - ports:
+        - port: 5432
+---
+# Source: immich/charts/redis/templates/networkpolicy.yaml
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
 metadata:
   name: immich-redis
   namespace: "default"
@@ -10,8 +37,110 @@ metadata:
     app.kubernetes.io/instance: immich
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.2.3
-    helm.sh/chart: redis-18.4.0
+    app.kubernetes.io/version: 7.2.5
+    helm.sh/chart: redis-19.5.3
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: immich
+      app.kubernetes.io/name: redis
+  policyTypes:
+    - Ingress
+    - Egress
+  egress:
+    - {}
+  ingress:
+    # Allow inbound connections
+    - ports:
+        - port: 6379
+---
+# Source: immich/charts/postgresql/templates/primary/pdb.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: immich-postgresql
+  namespace: "default"
+  labels:
+    app.kubernetes.io/instance: immich
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/version: 17.0.0
+    helm.sh/chart: postgresql-16.0.0
+    app.kubernetes.io/component: primary
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: immich
+      app.kubernetes.io/name: postgresql
+      app.kubernetes.io/component: primary
+---
+# Source: immich/charts/redis/templates/master/pdb.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: immich-redis-master
+  namespace: "default"
+  labels:
+    app.kubernetes.io/instance: immich
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/version: 7.2.5
+    helm.sh/chart: redis-19.5.3
+    app.kubernetes.io/component: master
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: immich
+      app.kubernetes.io/name: redis
+      app.kubernetes.io/component: master
+---
+# Source: immich/charts/postgresql/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: immich-postgresql
+  namespace: "default"
+  labels:
+    app.kubernetes.io/instance: immich
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/version: 17.0.0
+    helm.sh/chart: postgresql-16.0.0
+automountServiceAccountToken: false
+---
+# Source: immich/charts/redis/templates/master/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+automountServiceAccountToken: false
+metadata:
+  name: immich-redis-master
+  namespace: "default"
+  labels:
+    app.kubernetes.io/instance: immich
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/version: 7.2.5
+    helm.sh/chart: redis-19.5.3
+---
+# Source: immich/charts/postgresql/templates/secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: immich-postgresql
+  namespace: "default"
+  labels:
+    app.kubernetes.io/instance: immich
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/version: 17.0.0
+    helm.sh/chart: postgresql-16.0.0
+type: Opaque
+data:
+  postgres-password: "bVIyb3B1eFdwVg=="
+  password: "aW1taWNo"
+  # We don't auto-generate LDAP password when it's not provided as we do for other passwords
 ---
 # Source: immich/charts/postgresql/templates/primary/initialization-configmap.yaml
 apiVersion: v1
@@ -23,8 +152,8 @@ metadata:
     app.kubernetes.io/instance: immich
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/version: 16.1.0
-    helm.sh/chart: postgresql-13.2.24
+    app.kubernetes.io/version: 17.0.0
+    helm.sh/chart: postgresql-16.0.0
 data:
   create-extensions.sql: |
     CREATE EXTENSION cube;
@@ -41,8 +170,8 @@ metadata:
     app.kubernetes.io/instance: immich
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.2.3
-    helm.sh/chart: redis-18.4.0
+    app.kubernetes.io/version: 7.2.5
+    helm.sh/chart: redis-19.5.3
 data:
   redis.conf: |-
     # User-supplied common configuration:
@@ -74,8 +203,8 @@ metadata:
     app.kubernetes.io/instance: immich
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.2.3
-    helm.sh/chart: redis-18.4.0
+    app.kubernetes.io/version: 7.2.5
+    helm.sh/chart: redis-19.5.3
 data:
   ping_readiness_local.sh: |-
     #!/bin/bash
@@ -182,8 +311,8 @@ metadata:
     app.kubernetes.io/instance: immich
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.2.3
-    helm.sh/chart: redis-18.4.0
+    app.kubernetes.io/version: 7.2.5
+    helm.sh/chart: redis-19.5.3
 data:
   start-master.sh: |
     #!/bin/bash
@@ -211,15 +340,10 @@ metadata:
     app.kubernetes.io/instance: immich
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/version: 16.1.0
-    helm.sh/chart: postgresql-13.2.24
+    app.kubernetes.io/version: 17.0.0
+    helm.sh/chart: postgresql-16.0.0
     app.kubernetes.io/component: primary
   annotations:
-    # Use this annotation in addition to the actual publishNotReadyAddresses
-    # field below because the annotation will stop being respected soon but the
-    # field is broken in some versions of Kubernetes:
-    # https://github.com/kubernetes/kubernetes/issues/58662
-    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
 spec:
   type: ClusterIP
   clusterIP: None
@@ -246,8 +370,8 @@ metadata:
     app.kubernetes.io/instance: immich
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/version: 16.1.0
-    helm.sh/chart: postgresql-13.2.24
+    app.kubernetes.io/version: 17.0.0
+    helm.sh/chart: postgresql-16.0.0
     app.kubernetes.io/component: primary
 spec:
   type: ClusterIP
@@ -272,10 +396,8 @@ metadata:
     app.kubernetes.io/instance: immich
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.2.3
-    helm.sh/chart: redis-18.4.0
-  annotations:
-    
+    app.kubernetes.io/version: 7.2.5
+    helm.sh/chart: redis-19.5.3
 spec:
   type: ClusterIP
   clusterIP: None
@@ -297,8 +419,8 @@ metadata:
     app.kubernetes.io/instance: immich
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.2.3
-    helm.sh/chart: redis-18.4.0
+    app.kubernetes.io/version: 7.2.5
+    helm.sh/chart: redis-19.5.3
     app.kubernetes.io/component: master
 spec:
   type: ClusterIP
@@ -325,7 +447,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: machine-learning
     app.kubernetes.io/version: v1.106.1
-    helm.sh/chart: immich-0.7.0
+    helm.sh/chart: immich-0.8.0
   annotations:
 spec:
   type: ClusterIP
@@ -349,7 +471,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: server
     app.kubernetes.io/version: v1.106.1
-    helm.sh/chart: immich-0.7.0
+    helm.sh/chart: immich-0.8.0
   annotations:
 spec:
   type: ClusterIP
@@ -372,7 +494,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: machine-learning
     app.kubernetes.io/version: v1.106.1
-    helm.sh/chart: immich-0.7.0
+    helm.sh/chart: immich-0.8.0
 spec:
   revisionHistoryLimit: 3
   replicas: 1
@@ -403,10 +525,7 @@ spec:
             - name: DB_HOSTNAME
               value: immich-postgresql
             - name: DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: immich-postgresql
-                  key: password
+              value: immich
             - name: DB_USERNAME
               value: immich
             - name: IMMICH_MACHINE_LEARNING_URL
@@ -453,7 +572,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: server
     app.kubernetes.io/version: v1.106.1
-    helm.sh/chart: immich-0.7.0
+    helm.sh/chart: immich-0.8.0
 spec:
   revisionHistoryLimit: 3
   replicas: 1
@@ -484,10 +603,7 @@ spec:
             - name: DB_HOSTNAME
               value: immich-postgresql
             - name: DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: immich-postgresql
-                  key: password
+              value: immich
             - name: DB_USERNAME
               value: immich
             - name: IMMICH_MACHINE_LEARNING_URL
@@ -504,7 +620,7 @@ spec:
           livenessProbe:
             failureThreshold: 3
             httpGet:
-              path: /api/server-info/ping
+              path: /api/server/ping
               port: http
             initialDelaySeconds: 0
             periodSeconds: 10
@@ -512,16 +628,23 @@ spec:
           readinessProbe:
             failureThreshold: 3
             httpGet:
-              path: /api/server-info/ping
+              path: /api/server/ping
+              port: http
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+          startupProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /api/server/ping
               port: http
             initialDelaySeconds: 0
             periodSeconds: 10
             timeoutSeconds: 1
       volumes:
         - name: library
-          hostPath:
-            path: /ssd/k3s/immich/library
-            type: Directory
+          persistentVolumeClaim:
+            claimName: immich-dev
 ---
 # Source: immich/charts/postgresql/templates/primary/statefulset.yaml
 apiVersion: apps/v1
@@ -533,8 +656,8 @@ metadata:
     app.kubernetes.io/instance: immich
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/version: 16.1.0
-    helm.sh/chart: postgresql-13.2.24
+    app.kubernetes.io/version: 17.0.0
+    helm.sh/chart: postgresql-16.0.0
     app.kubernetes.io/component: primary
 spec:
   replicas: 1
@@ -554,12 +677,13 @@ spec:
         app.kubernetes.io/instance: immich
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: postgresql
-        app.kubernetes.io/version: 16.1.0
-        helm.sh/chart: postgresql-13.2.24
+        app.kubernetes.io/version: 17.0.0
+        helm.sh/chart: postgresql-16.0.0
         app.kubernetes.io/component: primary
     spec:
-      serviceAccountName: default
+      serviceAccountName: immich-postgresql
       
+      automountServiceAccountToken: false
       affinity:
         podAffinity:
           
@@ -577,6 +701,9 @@ spec:
           
       securityContext:
         fsGroup: 1001
+        fsGroupChangePolicy: Always
+        supplementalGroups: []
+        sysctls: []
       hostNetwork: false
       hostIPC: false
       containers:
@@ -589,9 +716,11 @@ spec:
               drop:
               - ALL
             privileged: false
-            readOnlyRootFilesystem: false
+            readOnlyRootFilesystem: true
+            runAsGroup: 1001
             runAsNonRoot: true
             runAsUser: 1001
+            seLinuxOptions: {}
             seccompProfile:
               type: RuntimeDefault
           env:
@@ -618,9 +747,6 @@ spec:
                   key: postgres-password
             - name: POSTGRES_DATABASE
               value: "immich"
-            # Replication
-            # Initdb
-            # Standby
             # LDAP
             - name: POSTGRESQL_ENABLE_LDAP
               value: "no"
@@ -669,11 +795,24 @@ spec:
                 - |
                   exec pg_isready -U "immich" -d "dbname=immich" -h 127.0.0.1 -p 5432
           resources:
-            limits: {}
+            limits:
+              cpu: 150m
+              ephemeral-storage: 2Gi
+              memory: 192Mi
             requests:
-              cpu: 250m
-              memory: 256Mi
+              cpu: 100m
+              ephemeral-storage: 50Mi
+              memory: 128Mi
           volumeMounts:
+            - name: empty-dir
+              mountPath: /tmp
+              subPath: tmp-dir
+            - name: empty-dir
+              mountPath: /opt/bitnami/postgresql/conf
+              subPath: app-conf-dir
+            - name: empty-dir
+              mountPath: /opt/bitnami/postgresql/tmp
+              subPath: app-tmp-dir
             - name: custom-init-scripts
               mountPath: /docker-entrypoint-initdb.d/
             - name: dshm
@@ -681,16 +820,25 @@ spec:
             - name: data
               mountPath: /bitnami/postgresql
       volumes:
+        - name: empty-dir
+          emptyDir: {}
         - name: custom-init-scripts
           configMap:
             name: immich-postgresql-init-scripts
         - name: dshm
           emptyDir:
             medium: Memory
-        - name: data
-          hostPath:
-            path: /ssd/k3s/immich/postgresql/
-            type: Directory
+  volumeClaimTemplates:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: data
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: "8Gi"
 ---
 # Source: immich/charts/redis/templates/master/application.yaml
 apiVersion: apps/v1
@@ -702,8 +850,8 @@ metadata:
     app.kubernetes.io/instance: immich
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redis
-    app.kubernetes.io/version: 7.2.3
-    helm.sh/chart: redis-18.4.0
+    app.kubernetes.io/version: 7.2.5
+    helm.sh/chart: redis-19.5.3
     app.kubernetes.io/component: master
 spec:
   replicas: 1
@@ -721,8 +869,8 @@ spec:
         app.kubernetes.io/instance: immich
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: redis
-        app.kubernetes.io/version: 7.2.3
-        helm.sh/chart: redis-18.4.0
+        app.kubernetes.io/version: 7.2.5
+        helm.sh/chart: redis-19.5.3
         app.kubernetes.io/component: master
       annotations:
         checksum/configmap: 86bcc953bb473748a3d3dc60b7c11f34e60c93519234d4c37f42e22ada559d47
@@ -733,8 +881,11 @@ spec:
       
       securityContext:
         fsGroup: 1001
-      serviceAccountName: immich-redis
-      automountServiceAccountToken: true
+        fsGroupChangePolicy: Always
+        supplementalGroups: []
+        sysctls: []
+      serviceAccountName: immich-redis-master
+      automountServiceAccountToken: false
       affinity:
         podAffinity:
           
@@ -754,16 +905,18 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: redis
-          image: docker.io/bitnami/redis:7.2.3-debian-11-r1
+          image: docker.io/bitnami/redis:7.2.5-debian-12-r0
           imagePullPolicy: "IfNotPresent"
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop:
               - ALL
-            runAsGroup: 0
+            readOnlyRootFilesystem: true
+            runAsGroup: 1001
             runAsNonRoot: true
             runAsUser: 1001
+            seLinuxOptions: {}
             seccompProfile:
               type: RuntimeDefault
           command:
@@ -809,8 +962,14 @@ spec:
                 - -c
                 - /health/ping_readiness_local.sh 1
           resources:
-            limits: {}
-            requests: {}
+            limits:
+              cpu: 150m
+              ephemeral-storage: 2Gi
+              memory: 192Mi
+            requests:
+              cpu: 100m
+              ephemeral-storage: 50Mi
+              memory: 128Mi
           volumeMounts:
             - name: start-scripts
               mountPath: /opt/bitnami/scripts/start-scripts
@@ -820,10 +979,12 @@ spec:
               mountPath: /data
             - name: config
               mountPath: /opt/bitnami/redis/mounted-etc
-            - name: redis-tmp-conf
+            - name: empty-dir
               mountPath: /opt/bitnami/redis/etc/
-            - name: tmp
+              subPath: app-conf-dir
+            - name: empty-dir
               mountPath: /tmp
+              subPath: tmp-dir
       volumes:
         - name: start-scripts
           configMap:
@@ -836,11 +997,20 @@ spec:
         - name: config
           configMap:
             name: immich-redis-configuration
-        - name: redis-tmp-conf
+        - name: empty-dir
           emptyDir: {}
-        - name: tmp
-          emptyDir: {}
-        - name: redis-data
-          hostPath:
-            path: /ssd/k3s/immich/redis/
-            type: Directory
+  volumeClaimTemplates:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: redis-data
+        labels:
+          app.kubernetes.io/instance: immich
+          app.kubernetes.io/name: redis
+          app.kubernetes.io/component: master
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: "8Gi"
