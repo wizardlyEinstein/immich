@@ -3,16 +3,14 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: immich
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: traefik
   tls:
     - secretName: immich-sindt-org-tls
       hosts:
-        - immich.sindt.org
+        - immich-dev.sindt.org
   rules:
-  - host: immich.sindt.org
+  - host: immich-dev.sindt.org
     http:
       paths:
       - path: /
