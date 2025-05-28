@@ -7,6 +7,8 @@ images:
   newTag: v1.132.3 
 - name: ghcr.io/immich-app/immich-server
   newTag: v1.132.3 
+- name: ghcr.io/immich-app/postgres
+  newTag: 14-vectorchord0.3.0-pgvectors0.2.0@sha256:fa4f6e0971f454cd95fec5a9aaed2ed93d8f46725cc6bc61e0698e97dba96da1 
 
 resources:
 - immich.yaml
