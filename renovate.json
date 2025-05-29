@@ -12,6 +12,10 @@
       "matchPackageNames": [
         "*"
       ]
+    },
+    {
+      "matchPackageNames": ["ghcr.io/immich-app/postgres"],
+      "allowedVersions": ["14"]
     }
   ],
   "separateMajorMinor": false
