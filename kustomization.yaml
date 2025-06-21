@@ -4,11 +4,11 @@ namespace: immich
 
 images:
 - name: ghcr.io/immich-app/immich-machine-learning
-  newTag: v1.134.0 
+  newTag: v1.135.3 
 - name: ghcr.io/immich-app/immich-server
-  newTag: v1.134.0 
+  newTag: v1.135.3 
 - name: ghcr.io/immich-app/postgres
-  newTag: 14-vectorchord0.3.0-pgvectors0.2.0@sha256:b8a840254e8e2db8720db3700a104623da372056347e80b598f00dd4da8df568 
+  newTag: 14-vectorchord0.3.0-pgvectors0.2.0@sha256:007a98749340534a0408a26435b1a0ab5ded76df788f897fdb6342c9c1b95448 
 
 resources:
 - immich.yaml
