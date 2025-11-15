@@ -8,9 +8,9 @@ spec:
   tls:
     - secretName: immich-sindt-org-tls
       hosts:
-        - immich-dev.sindt.org
+        - immich-hdd.sindt.org
   rules:
-  - host: immich-dev.sindt.org
+  - host: immich-hdd.sindt.org
     http:
       paths:
       - path: /
