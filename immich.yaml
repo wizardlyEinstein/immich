@@ -632,7 +632,7 @@ spec:
       volumes:
         - name: library
           hostPath:
-            path: /hdd/encrypted/k3s/immich/library
+            path: /ssd/encrypted/k3s/immich/library
             type: Directory
 ---
 # Source: immich/charts/postgresql/templates/primary/statefulset.yaml
@@ -809,7 +809,7 @@ spec:
             medium: Memory
         - name: data
           hostPath:
-            path: /hdd/encrypted/k3s/immich/postgresql/
+            path: /ssd/encrypted/k3s/immich/postgresql/
             type: Directory
 ---
 # Source: immich/charts/redis/templates/master/application.yaml
@@ -964,5 +964,5 @@ spec:
           emptyDir: {}
         - name: redis-data
           hostPath:
-            path: /hdd/encrypted/k3s/immich/redis/
+            path: /ssd/encrypted/k3s/immich/redis/
             type: Directory
